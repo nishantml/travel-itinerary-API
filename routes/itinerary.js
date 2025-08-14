@@ -1,12 +1,12 @@
 const express = require('express');
 const { body, validationResult, query } = require('express-validator');
 const Itinerary = require('../models/Itinerary');
-const { 
-  authenticateToken, 
+const {
+  authenticateToken,
 } = require('../middleware/auth');
-const { 
-  cacheItinerary, 
-  setCache, 
+const {
+  cacheItinerary,
+  setCache,
   invalidateCache,
   createShareableLink,
   getShareableData
@@ -58,45 +58,45 @@ router.use(authenticateToken);
 // @access  Private
 router.post('/', [
   body('title')
-    .trim()
-    .isLength({ min: 1, max: 100 })
-    .withMessage('Title must be between 1 and 100 characters'),
-  
+      .trim()
+      .isLength({ min: 1, max: 100 })
+      .withMessage('Title must be between 1 and 100 characters'),
+
   body('destination')
-    .trim()
-    .isLength({ min: 1 })
-    .withMessage('Destination is required'),
-  
+      .trim()
+      .isLength({ min: 1 })
+      .withMessage('Destination is required'),
+
   body('startDate')
-    .isISO8601()
-    .withMessage('Start date must be a valid date'),
-  
+      .isISO8601()
+      .withMessage('Start date must be a valid date'),
+
   body('endDate')
-    .isISO8601()
-    .withMessage('End date must be a valid date'),
-  
+      .isISO8601()
+      .withMessage('End date must be a valid date'),
+
   body('activities')
-    .optional()
-    .isArray()
-    .withMessage('Activities must be an array'),
-  
+      .optional()
+      .isArray()
+      .withMessage('Activities must be an array'),
+
   body('activities.*.time')
-    .if(body('activities').exists())
-    .trim()
-    .isLength({ min: 1 })
-    .withMessage('Activity time is required'),
-  
+      .if(body('activities').exists())
+      .trim()
+      .isLength({ min: 1 })
+      .withMessage('Activity time is required'),
+
   body('activities.*.description')
-    .if(body('activities').exists())
-    .trim()
-    .isLength({ min: 1 })
-    .withMessage('Activity description is required'),
-  
+      .if(body('activities').exists())
+      .trim()
+      .isLength({ min: 1 })
+      .withMessage('Activity description is required'),
+
   body('activities.*.location')
-    .if(body('activities').exists())
-    .trim()
-    .isLength({ min: 1 })
-    .withMessage('Activity location is required')
+      .if(body('activities').exists())
+      .trim()
+      .isLength({ min: 1 })
+      .withMessage('Activity location is required')
 ], async (req, res) => {
   try {
     // Check for validation errors
@@ -133,7 +133,7 @@ router.post('/', [
     });
   } catch (error) {
     console.error('Create itinerary error:', error);
-    
+
     if (error.name === 'ValidationError') {
       return res.status(400).json({
         success: false,
@@ -157,42 +157,52 @@ router.post('/', [
 // @access  Private
 router.get('/', [
   query('page')
-    .optional()
-    .isInt({ min: 1 })
-    .withMessage('Page must be a positive integer'),
-  
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage('Page must be a positive integer'),
+
   query('limit')
-    .optional()
-    .isInt({ min: 1, max: 100 })
-    .withMessage('Limit must be between 1 and 100'),
-  
+      .optional()
+      .isInt({ min: 1, max: 100 })
+      .withMessage('Limit must be between 1 and 100'),
+
   query('sort')
-    .optional()
-    .isIn(['createdAt', 'startDate', 'title'])
-    .withMessage('Sort must be createdAt, startDate, or title'),
-  
+      .optional()
+      .isIn(['createdAt', 'startDate', 'title'])
+      .withMessage('Sort must be createdAt, startDate, or title'),
+
   query('destination')
-    .optional()
-    .trim()
-    .isLength({ min: 1 })
-    .withMessage('Destination filter cannot be empty')
+      .optional()
+      .trim()
+      .isLength({ min: 1 })
+      .withMessage('Destination filter cannot be empty')
 ], async (req, res) => {
   try {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
     const { page = 1, limit = 10, sort = 'createdAt', destination } = req.query;
-    
+
     let filters = { userId: req.user._id };
-    
+
     // destination filter if provided
     if (destination) {
       filters.destination = { $regex: destination, $options: 'i' };
     }
-    
+
     // get itineraries with pagination and sorting
     const itineraries = await Itinerary.getItineraries(filters, sort, page, limit);
-    
+
     // Get total count for pagination
     const total = await Itinerary.countDocuments(filters);
-    
+
     res.json({
       success: true,
       data: {
@@ -221,7 +231,7 @@ router.get('/:id', cacheItinerary, async (req, res) => {
   try {
     console.log("not from cached")
     const { id } = req.params;
-    
+
     const itinerary = await Itinerary.findById(id);
     if (!itinerary) {
       return res.status(404).json({
@@ -229,7 +239,7 @@ router.get('/:id', cacheItinerary, async (req, res) => {
         message: 'Itinerary not found'
       });
     }
-    
+
     // Check if user owns the itinerary
     if (itinerary.userId.toString() !== req.user._id.toString()) {
       return res.status(403).json({
@@ -237,19 +247,19 @@ router.get('/:id', cacheItinerary, async (req, res) => {
         message: 'Access denied'
       });
     }
-    
+
     // Populate user info
     await itinerary.populate('userId', 'username firstName lastName');
-    
+
     const responseData = {
       success: true,
       data: { itinerary }
     };
-    
+
     // Cache the response data with 5 minutes TTL
     const cacheKey = `itinerary:${id}`;
     await setCache(cacheKey, responseData, 300); // 300 seconds = 5 minutes
-    
+
     res.json(responseData);
   } catch (error) {
     console.error('Get itinerary error:', error);
@@ -265,49 +275,49 @@ router.get('/:id', cacheItinerary, async (req, res) => {
 // @access  Private
 router.put('/:id', [
   body('title')
-    .optional()
-    .trim()
-    .isLength({ min: 1, max: 100 })
-    .withMessage('Title must be between 1 and 100 characters'),
-  
+      .optional()
+      .trim()
+      .isLength({ min: 1, max: 100 })
+      .withMessage('Title must be between 1 and 100 characters'),
+
   body('destination')
-    .optional()
-    .trim()
-    .isLength({ min: 1 })
-    .withMessage('Destination cannot be empty'),
-  
+      .optional()
+      .trim()
+      .isLength({ min: 1 })
+      .withMessage('Destination cannot be empty'),
+
   body('startDate')
-    .optional()
-    .isISO8601()
-    .withMessage('Start date must be a valid date'),
-  
+      .optional()
+      .isISO8601()
+      .withMessage('Start date must be a valid date'),
+
   body('endDate')
-    .optional()
-    .isISO8601()
-    .withMessage('End date must be a valid date'),
-  
+      .optional()
+      .isISO8601()
+      .withMessage('End date must be a valid date'),
+
   body('activities')
-    .optional()
-    .isArray()
-    .withMessage('Activities must be an array'),
-  
+      .optional()
+      .isArray()
+      .withMessage('Activities must be an array'),
+
   body('activities.*.time')
-    .if(body('activities').exists())
-    .trim()
-    .isLength({ min: 1 })
-    .withMessage('Activity time is required'),
-  
+      .if(body('activities').exists())
+      .trim()
+      .isLength({ min: 1 })
+      .withMessage('Activity time is required'),
+
   body('activities.*.description')
-    .if(body('activities').exists())
-    .trim()
-    .isLength({ min: 1 })
-    .withMessage('Activity description is required'),
-  
+      .if(body('activities').exists())
+      .trim()
+      .isLength({ min: 1 })
+      .withMessage('Activity description is required'),
+
   body('activities.*.location')
-    .if(body('activities').exists())
-    .trim()
-    .isLength({ min: 1 })
-    .withMessage('Activity location is required')
+      .if(body('activities').exists())
+      .trim()
+      .isLength({ min: 1 })
+      .withMessage('Activity location is required')
 ], async (req, res) => {
   try {
     // Check for validation errors
@@ -322,7 +332,7 @@ router.put('/:id', [
 
     const { id } = req.params;
     const updateData = req.body;
-    
+
     const itinerary = await Itinerary.findById(id);
     if (!itinerary) {
       return res.status(404).json({
@@ -330,7 +340,7 @@ router.put('/:id', [
         message: 'Itinerary not found'
       });
     }
-    
+
     // Check if user owns the itinerary
     if (itinerary.userId.toString() !== req.user._id.toString()) {
       return res.status(403).json({
@@ -338,17 +348,17 @@ router.put('/:id', [
         message: 'Access denied'
       });
     }
-    
+
     // Update itinerary
     const updatedItinerary = await Itinerary.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true, runValidators: true }
+        id,
+        updateData,
+        { new: true, runValidators: true }
     ).populate('userId', 'username firstName lastName');
-    
+
     // Invalidate cache for this itinerary
     await invalidateCache(`itinerary:${id}`);
-    
+
     res.json({
       success: true,
       message: 'Itinerary updated successfully',
@@ -356,7 +366,7 @@ router.put('/:id', [
     });
   } catch (error) {
     console.error('Update itinerary error:', error);
-    
+
     if (error.name === 'ValidationError') {
       return res.status(400).json({
         success: false,
@@ -367,7 +377,7 @@ router.put('/:id', [
         }))
       });
     }
-    
+
     res.status(500).json({
       success: false,
       message: 'Failed to update itinerary'
@@ -381,7 +391,7 @@ router.put('/:id', [
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const itinerary = await Itinerary.findById(id);
     if (!itinerary) {
       return res.status(404).json({
@@ -389,7 +399,7 @@ router.delete('/:id', async (req, res) => {
         message: 'Itinerary not found'
       });
     }
-    
+
     // Check if user owns the itinerary
     if (itinerary.userId.toString() !== req.user._id.toString()) {
       return res.status(403).json({
@@ -397,12 +407,12 @@ router.delete('/:id', async (req, res) => {
         message: 'Access denied'
       });
     }
-    
+
     await Itinerary.findByIdAndDelete(id);
-    
+
     // invalidate cache for this itinerary
     await invalidateCache(`itinerary:${id}`);
-    
+
     res.json({
       success: true,
       message: 'Itinerary deleted successfully'
@@ -472,4 +482,4 @@ router.post('/:id/share', async (req, res) => {
 });
 
 
-module.exports = router; 
+module.exports = router;

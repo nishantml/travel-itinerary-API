@@ -33,21 +33,22 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.use(morgan('combined'));
 
-// MongoDB connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/tmtc_assignment';
+// MongoDB connection - only connect if not in test mode
+if (process.env.NODE_ENV !== 'test') {
+  const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/tmtc_assignment';
 
-mongoose.connect(MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => {
-  console.log('Connected to MongoDB successfully');
-})
-.catch((error) => {
-  console.error('MongoDB connection error:', error);
-  process.exit(1);
-});
-
+  mongoose.connect(MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+      .then(() => {
+        console.log('Connected to MongoDB successfully');
+      })
+      .catch((error) => {
+        console.error('MongoDB connection error:', error);
+        process.exit(1);
+      });
+}
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -74,7 +75,7 @@ app.use('*', (req, res) => {
 // global error handler
 app.use((error, req, res, next) => {
   console.error('global error handler:', error);
-  
+
   res.status(error.status || 500).json({
     success: false,
     message: error.message || 'Internal server error',
@@ -91,4 +92,4 @@ if (process.env.NODE_ENV !== 'test') {
   });
 }
 
-module.exports = app; 
+module.exports = app;

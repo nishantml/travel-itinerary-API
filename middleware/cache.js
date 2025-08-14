@@ -6,21 +6,29 @@ const redisClient = redis.createClient({
   url: process.env.REDIS_URL || 'redis://localhost:6379'
 });
 
-redisClient.connect().catch(console.error);
+// only connect to Redis if not in test mode
+if (process.env.NODE_ENV !== 'test') {
+  redisClient.connect().catch(console.error);
 
-redisClient.on('error', (err) => {
-  console.error('Redis Client Error:', err);
-});
+  redisClient.on('error', (err) => {
+    console.error('Redis Client Error:', err);
+  });
 
-redisClient.on('connect', () => {
-  console.log('Connected to Redis successfully');
-});
+  redisClient.on('connect', () => {
+    console.log('Connected to Redis successfully');
+  });
+}
 
 const cacheItinerary = async (req, res, next) => {
   try {
+    // skip caching in test mode
+    if (process.env.NODE_ENV === 'test') {
+      return next();
+    }
+
     const { id } = req.params;
     const cacheKey = `itinerary:${id}`;
-    
+
     // Try to get data from cache
     const cachedData = await redisClient.get(cacheKey);
     console.log(`Cached ${cacheKey}`);
@@ -29,7 +37,7 @@ const cacheItinerary = async (req, res, next) => {
       const parsedData = JSON.parse(cachedData);
       return res.json(parsedData);
     }
-    
+
     console.log(`Cache miss for itinerary: ${id}`);
     next();
   } catch (error) {
@@ -40,6 +48,10 @@ const cacheItinerary = async (req, res, next) => {
 
 const setCache = async (key, data, ttl = 300) => {
   try {
+    // skip caching in test mode
+    if (process.env.NODE_ENV === 'test') {
+      return;
+    }
     await redisClient.setEx(key, ttl, JSON.stringify(data));
     console.log(`Cached data for key: ${key} with TTL: ${ttl}s`);
   } catch (error) {
@@ -49,6 +61,10 @@ const setCache = async (key, data, ttl = 300) => {
 
 const invalidateCache = async (pattern) => {
   try {
+    // skip cache invalidation in test mode
+    if (process.env.NODE_ENV === 'test') {
+      return;
+    }
     const keys = await redisClient.keys(pattern);
     if (keys.length > 0) {
       await redisClient.del(keys);
@@ -59,13 +75,16 @@ const invalidateCache = async (pattern) => {
   }
 };
 
-
 const generateShareableId = () => {
   return crypto.randomBytes(8).toString('hex');
 };
 
 const createShareableLink = async (itineraryId, shareableData, ttl = 86400) => {
   try {
+    // skip shareable link creation in test mode
+    if (process.env.NODE_ENV === 'test') {
+      return generateShareableId();
+    }
 
     console.log('Redis not ready, skipping shareable link creation ', redisClient.isOpen);
 
@@ -93,6 +112,11 @@ const createShareableLink = async (itineraryId, shareableData, ttl = 86400) => {
 
 const getShareableData = async (shareableId) => {
   try {
+    // skip shareable data retrieval in test mode
+    if (process.env.NODE_ENV === 'test') {
+      return null;
+    }
+
     // Check if Redis is ready
     if (!redisClient.isOpen) {
       console.log('Redis not ready, skipping shareable data retrieval');
