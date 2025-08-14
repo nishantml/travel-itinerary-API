@@ -78,6 +78,7 @@ itinerarySchema.statics.getItineraries = function(filters = {}, sort = 'createdA
   } else {
     query = query.sort({ createdAt: -1 }); // default
   }
+  // console.log("filters:: ",filters)
   
   return query
     .populate('userId', 'username firstName lastName')

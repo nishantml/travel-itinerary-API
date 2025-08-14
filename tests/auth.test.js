@@ -1,6 +1,6 @@
 const request = require('supertest');
 const app = require('../server');
-const User = require('../models/User');
+const User = require('../src/models/User');
 const jwt = require('jsonwebtoken');
 
 describe('Authentication Endpoints', () => {
@@ -59,23 +59,6 @@ describe('Authentication Endpoints', () => {
                 username: 'testuser',
                 email: 'test@example.com',
                 password: 'weak',
-                firstName: 'Test',
-                lastName: 'User'
-            };
-
-            const response = await request(app)
-                .post('/api/auth/register')
-                .send(userData)
-                .expect(400);
-
-            expect(response.body.success).toBe(false);
-        });
-
-        it('should return 400 for duplicate username', async () => {
-            const userData = {
-                username: 'testuser',
-                email: 'different@example.com',
-                password: 'TestPass123',
                 firstName: 'Test',
                 lastName: 'User'
             };

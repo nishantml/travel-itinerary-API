@@ -1,0 +1,359 @@
+{
+	"info": {
+		"_postman_id": "tmtc-api-collection",
+		"name": "TMTC Backend API",
+		"description": "Complete API collection for TMTC Backend Assignment",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "tmtc-backend"
+	},
+	"item": [
+
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "User Registration",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"johndoe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"SecurePass123\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						},
+						"description": "Register a new user account"
+					},
+					"response": []
+				},
+				{
+					"name": "User Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"identifier\": \"john@example.com\",\n  \"password\": \"SecurePass123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Authenticate user and get JWT token"
+					},
+					"response": []
+				}
+			],
+			"description": "User authentication endpoints"
+		},
+		{
+			"name": "Itineraries",
+			"item": [
+				{
+					"name": "Create Itinerary",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Paris Trip\",\n  \"destination\": \"Paris, France\",\n  \"startDate\": \"2024-06-01\",\n  \"endDate\": \"2024-06-05\",\n  \"activities\": [\n    {\n      \"time\": \"09:00\",\n      \"description\": \"Visit Eiffel Tower\",\n      \"location\": \"Champ de Mars\"\n    },\n    {\n      \"time\": \"14:00\",\n      \"description\": \"Lunch at Le Comptoir\",\n      \"location\": \"Rue de Rivoli\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/itineraries",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"itineraries"
+							]
+						},
+						"description": "Create a new itinerary (requires authentication)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Itineraries",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/itineraries?page=1&limit=10&sort=createdAt&destination=Paris",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"itineraries"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (optional, default: 1)"
+								},
+								{
+									"key": "limit",
+									"value": "10",
+									"description": "Items per page (optional, default: 10, max: 100)"
+								},
+								{
+									"key": "sort",
+									"value": "createdAt",
+									"description": "Sort field: createdAt, startDate, or title (optional, default: createdAt)"
+								},
+								{
+									"key": "destination",
+									"value": "Paris",
+									"description": "Filter by destination (optional)"
+								}
+							]
+						},
+						"description": "Get all itineraries with filtering, sorting, and pagination"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Itinerary by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/itineraries/{{itinerary_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"itineraries",
+								"{{itinerary_id}}"
+							]
+						},
+						"description": "Get specific itinerary by ID (requires authentication and ownership)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Itinerary",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Updated Paris Trip\",\n  \"destination\": \"Paris, France\",\n  \"startDate\": \"2024-06-01\",\n  \"endDate\": \"2024-06-07\",\n  \"activities\": [\n    {\n      \"time\": \"09:00\",\n      \"description\": \"Visit Eiffel Tower\",\n      \"location\": \"Champ de Mars\"\n    },\n    {\n      \"time\": \"14:00\",\n      \"description\": \"Lunch at Le Comptoir\",\n      \"location\": \"Rue de Rivoli\"\n    },\n    {\n      \"time\": \"16:00\",\n      \"description\": \"Visit Louvre Museum\",\n      \"location\": \"Rue de Rivoli\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/itineraries/{{itinerary_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"itineraries",
+								"{{itinerary_id}}"
+							]
+						},
+						"description": "Update existing itinerary (requires authentication and ownership)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Itinerary",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/itineraries/{{itinerary_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"itineraries",
+								"{{itinerary_id}}"
+							]
+						},
+						"description": "Delete itinerary (requires authentication and ownership)"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Shareable Link",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/itineraries/{{itinerary_id}}/share",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"itineraries",
+								"{{itinerary_id}}",
+								"share"
+							]
+						},
+						"description": "Create a shareable link for an itinerary (requires authentication and ownership)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Shareable Itinerary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/itineraries/share/{{shareable_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"itineraries",
+								"share",
+								"{{shareable_id}}"
+							]
+						},
+						"description": "Get public shareable itinerary (no authentication required)"
+					},
+					"response": []
+				}
+			],
+			"description": "Itinerary management endpoints"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Auto-save auth token from login response",
+					"if (pm.request.url.path.includes('/api/auth/login') && pm.request.method === 'POST') {",
+					"    pm.environment.set('save_token', true);",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Auto-save auth token from login response",
+					"if (pm.environment.get('save_token') === 'true') {",
+					"    const response = pm.response.json();",
+					"    if (response.success && response.data && response.data.token) {",
+					"        pm.environment.set('auth_token', response.data.token);",
+					"        pm.environment.set('save_token', false);",
+					"        console.log('Auth token saved successfully');",
+					"    }",
+					"    ",
+					"    // Auto-save user ID for itinerary operations",
+					"    if (response.success && response.data && response.data.user && response.data.user.id) {",
+					"        pm.environment.set('user_id', response.data.user.id);",
+					"        console.log('User ID saved successfully');",
+					"    }",
+					"}"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "string",
+			"description": "Base URL for the API server"
+		},
+		{
+			"key": "auth_token",
+			"value": "",
+			"type": "string",
+			"description": "JWT authentication token (auto-filled after login)"
+		},
+		{
+			"key": "user_id",
+			"value": "",
+			"type": "string",
+			"description": "User ID (auto-filled after login)"
+		},
+		{
+			"key": "itinerary_id",
+			"value": "",
+			"type": "string",
+			"description": "Itinerary ID for testing specific operations"
+		},
+		{
+			"key": "shareable_id",
+			"value": "",
+			"type": "string",
+			"description": "Shareable ID for testing public itinerary access"
+		}
+	]
+} 

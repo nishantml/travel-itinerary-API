@@ -1,5 +1,7 @@
 const redis = require('redis');
 const crypto = require('crypto');
+const ResponseHandler = require("../utils/response");
+const {HTTP_STATUS} = require("../constants/statusCodes");
 
 // Create Redis client
 const redisClient = redis.createClient({
@@ -35,7 +37,13 @@ const cacheItinerary = async (req, res, next) => {
     if (cachedData) {
       console.log(`Cache hit for itinerary: ${id}`);
       const parsedData = JSON.parse(cachedData);
-      return res.json(parsedData);
+      // return res.json(parsedData);
+      return ResponseHandler.success(
+          res,
+          HTTP_STATUS.OK,
+          'Itinerary retrieved successfully',
+          parsedData
+      );
     }
 
     console.log(`Cache miss for itinerary: ${id}`);

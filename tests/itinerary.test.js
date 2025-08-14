@@ -1,7 +1,7 @@
 const request = require('supertest');
 const app = require('../server');
-const Itinerary = require('../models/Itinerary');
-const User = require('../models/User');
+const Itinerary = require('../src/models/Itinerary');
+const User = require('../src/models/User');
 const jwt = require('jsonwebtoken');
 
 describe('Itinerary CRUD Operations', () => {
@@ -115,7 +115,7 @@ describe('Itinerary CRUD Operations', () => {
                 .expect(200);
 
             expect(response.body.success).toBe(true);
-            expect(response.body.data.itineraries).toHaveLength(2);
+            expect(response.body.data).toHaveLength(2);
         });
 
         it('should return 401 without authentication token', async () => {
@@ -133,7 +133,7 @@ describe('Itinerary CRUD Operations', () => {
                 .expect(200);
 
             expect(response.body.success).toBe(true);
-            expect(response.body.data.itineraries).toHaveLength(1);
+            expect(response.body.data).toHaveLength(1);
         });
     });
 
